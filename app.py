@@ -135,16 +135,26 @@ def calcular_impostometro_estimado():
 
 # --- FUNÇÃO GERADORA DE CARD (PILLOW) ---
 
+import os
+
 def gerar_card_imagem(usd_str, usd_var_str, usd_pct_val, selic_str, imposto_str, data_hora):
     largura, altura = 1080, 1080
     img = Image.new("RGB", (largura, altura), color="#0E1117")
     draw = ImageDraw.Draw(img)
 
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    caminho_fonte = os.path.join(base_dir, "fonte.ttf")
+
     def carregar_fonte(tamanho):
-        for nome in ["fonte.ttf", "arialbd.ttf", "arial.ttf", "C:/Windows/Fonts/arial.ttf"]:
+        if os.path.exists(caminho_fonte):
             try:
-                return ImageFont.truetype(nome, tamanho)
-            except IOError:
+                return ImageFont.truetype(caminho_fonte, tamanho)
+            except Exception:
+                pass
+        for fallback in ["arialbd.ttf", "arial.ttf", "C:/Windows/Fonts/arial.ttf"]:
+            try:
+                return ImageFont.truetype(fallback, tamanho)
+            except Exception:
                 continue
         return ImageFont.load_default()
 
