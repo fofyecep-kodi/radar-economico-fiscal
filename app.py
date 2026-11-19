@@ -16,6 +16,25 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+    /* Esconde a barra superior (Fork, GitHub, menu) e o rodapé do Streamlit */
+    header[data-testid="stHeader"] {
+        display: none !important;
+    }
+    footer {
+        display: none !important;
+    }
+    #MainMenu {
+        visibility: hidden !important;
+    }
+    .stDeployButton {
+        display: none !important;
+    }
+    /* Ajusta o espaçamento superior já que a barra foi removida */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+    }
+
     .source-text {
         font-size: 12px;
         color: #888888;
