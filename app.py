@@ -140,20 +140,31 @@ def gerar_card_imagem(usd_str, usd_var_str, usd_pct_val, selic_str, imposto_str,
     img = Image.new("RGB", (largura, altura), color="#0E1117")
     draw = ImageDraw.Draw(img)
 
-    try:
-        fonte_titulo = ImageFont.truetype("arialbd.ttf", 52)
-        fonte_subtitulo = ImageFont.truetype("arial.ttf", 30)
-        fonte_label = ImageFont.truetype("arial.ttf", 34)
-        fonte_valor = ImageFont.truetype("arialbd.ttf", 58)
-        fonte_imposto = ImageFont.truetype("arialbd.ttf", 54)
-        fonte_rodape = ImageFont.truetype("arial.ttf", 24)
-    except IOError:
-        fonte_titulo = ImageFont.load_default()
-        fonte_subtitulo = ImageFont.load_default()
-        fonte_label = ImageFont.load_default()
-        fonte_valor = ImageFont.load_default()
-        fonte_imposto = ImageFont.load_default()
-        fonte_rodape = ImageFont.load_default()
+    caminhos_bold = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "arialbd.ttf",
+        "C:/Windows/Fonts/arialbd.ttf",
+    ]
+    caminhos_regular = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "arial.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+    ]
+
+    def carregar_fonte(caminhos, tamanho):
+        for caminho in caminhos:
+            try:
+                return ImageFont.truetype(caminho, tamanho)
+            except IOError:
+                continue
+        return ImageFont.load_default()
+
+    fonte_titulo = carregar_fonte(caminhos_bold, 48)
+    fonte_subtitulo = carregar_fonte(caminhos_regular, 28)
+    fonte_label = carregar_fonte(caminhos_regular, 32)
+    fonte_valor = carregar_fonte(caminhos_bold, 54)
+    fonte_imposto = carregar_fonte(caminhos_bold, 48)
+    fonte_rodape = carregar_fonte(caminhos_regular, 22)
 
     draw.text((70, 70), "RADAR ECONÔMICO & FISCAL", fill="#FFFFFF", font=fonte_titulo)
     draw.text((70, 140), f"Atualizado em {data_hora}", fill="#A0AAB5", font=fonte_subtitulo)
