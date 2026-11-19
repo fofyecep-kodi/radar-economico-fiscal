@@ -4,6 +4,7 @@ import time
 import io
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
+import os
 
 st.set_page_config(
     page_title="Painel Econômico e Fiscal - Tempo Real",
@@ -143,27 +144,25 @@ def gerar_card_imagem(usd_str, usd_var_str, usd_pct_val, selic_str, imposto_str,
     draw = ImageDraw.Draw(img)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    caminho_fonte = os.path.join(base_dir, "fonte.ttf")
 
-    def carregar_fonte(tamanho):
-        if os.path.exists(caminho_fonte):
+    def carregar_fonte(nomes_candidatos, tamanho):
+        for nome in nomes_candidatos:
+            caminho = os.path.join(base_dir, nome)
             try:
-                return ImageFont.truetype(caminho_fonte, tamanho)
-            except Exception:
-                pass
-        for fallback in ["arialbd.ttf", "arial.ttf", "C:/Windows/Fonts/arial.ttf"]:
-            try:
-                return ImageFont.truetype(fallback, tamanho)
+                return ImageFont.truetype(caminho, tamanho)
             except Exception:
                 continue
         return ImageFont.load_default()
 
-    fonte_titulo = carregar_fonte(48)
-    fonte_subtitulo = carregar_fonte(28)
-    fonte_label = carregar_fonte(32)
-    fonte_valor = carregar_fonte(54)
-    fonte_imposto = carregar_fonte(48)
-    fonte_rodape = carregar_fonte(22)
+    bold_candidatos = ["ARIALBD.TTF", "ARIBLK.TTF", "ARIAL.TTF", "arialbd.ttf", "arial.ttf"]
+    regular_candidatos = ["ARIAL.TTF", "ARIALBD.TTF", "arial.ttf", "arialbd.ttf"]
+
+    fonte_titulo = carregar_fonte(bold_candidatos, 48)
+    fonte_subtitulo = carregar_fonte(regular_candidatos, 28)
+    fonte_label = carregar_fonte(regular_candidatos, 32)
+    fonte_valor = carregar_fonte(bold_candidatos, 54)
+    fonte_imposto = carregar_fonte(bold_candidatos, 48)
+    fonte_rodape = carregar_fonte(regular_candidatos, 22)
 
     draw.text((70, 70), "RADAR ECONÔMICO & FISCAL", fill="#FFFFFF", font=fonte_titulo)
     draw.text((70, 140), f"Atualizado em {data_hora}", fill="#A0AAB5", font=fonte_subtitulo)
