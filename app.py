@@ -140,31 +140,20 @@ def gerar_card_imagem(usd_str, usd_var_str, usd_pct_val, selic_str, imposto_str,
     img = Image.new("RGB", (largura, altura), color="#0E1117")
     draw = ImageDraw.Draw(img)
 
-    caminhos_bold = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "arialbd.ttf",
-        "C:/Windows/Fonts/arialbd.ttf",
-    ]
-    caminhos_regular = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "arial.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-    ]
-
-    def carregar_fonte(caminhos, tamanho):
-        for caminho in caminhos:
+    def carregar_fonte(tamanho):
+        for nome in ["fonte.ttf", "arialbd.ttf", "arial.ttf", "C:/Windows/Fonts/arial.ttf"]:
             try:
-                return ImageFont.truetype(caminho, tamanho)
+                return ImageFont.truetype(nome, tamanho)
             except IOError:
                 continue
         return ImageFont.load_default()
 
-    fonte_titulo = carregar_fonte(caminhos_bold, 48)
-    fonte_subtitulo = carregar_fonte(caminhos_regular, 28)
-    fonte_label = carregar_fonte(caminhos_regular, 32)
-    fonte_valor = carregar_fonte(caminhos_bold, 54)
-    fonte_imposto = carregar_fonte(caminhos_bold, 48)
-    fonte_rodape = carregar_fonte(caminhos_regular, 22)
+    fonte_titulo = carregar_fonte(48)
+    fonte_subtitulo = carregar_fonte(28)
+    fonte_label = carregar_fonte(32)
+    fonte_valor = carregar_fonte(54)
+    fonte_imposto = carregar_fonte(48)
+    fonte_rodape = carregar_fonte(22)
 
     draw.text((70, 70), "RADAR ECONÔMICO & FISCAL", fill="#FFFFFF", font=fonte_titulo)
     draw.text((70, 140), f"Atualizado em {data_hora}", fill="#A0AAB5", font=fonte_subtitulo)
@@ -188,7 +177,6 @@ def gerar_card_imagem(usd_str, usd_var_str, usd_pct_val, selic_str, imposto_str,
     img.save(buffer, format="PNG")
     buffer.seek(0)
     return buffer
-
 # --- INTERFACE DO PAINEL ---
 
 st.title("📊 Indicadores Econômicos e Fiscais")
