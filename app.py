@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import time
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 st.set_page_config(
@@ -25,36 +25,87 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json"
 }
 
 # --- FUNÇÕES DE BUSCA DE DADOS ---
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=60)
 def buscar_moedas():
+    # 1ª tentativa: AwesomeAPI
     try:
         url = "https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL"
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        response = requests.get(url, headers=HEADERS, timeout=8)
         response.raise_for_status()
         dados = response.json()
-        return dados["USDBRL"], dados["EURBRL"]
+        if "USDBRL" in dados and "EURBRL" in dados:
+            return dados["USDBRL"], dados["EURBRL"]
+    except Exception:
+        pass
+
+    # 2ª tentativa (fallback para servidores em nuvem): Frankfurter API
+    try:
+        hoje = datetime.now().date()
+        ontem = hoje - timedelta(days=5)
+        url = f"https://api.frankfurter.app/{ontem}..{hoje}?from=USD&to=BRL"
+        r_usd = requests.get(url, headers=HEADERS, timeout=8).json()
+
+        url_eur = f"https://api.frankfurter.app/{ontem}..{hoje}?from=EUR&to=BRL"
+        r_eur = requests.get(url_eur, headers=HEADERS, timeout=8).json()
+
+        rates_usd = sorted(r_usd.get("rates", {}).items())
+        rates_eur = sorted(r_eur.get("rates", {}).items())
+
+        usd_dict = None
+        eur_dict = None
+
+        if len(rates_usd) >= 1:
+            ultimo_val = float(rates_usd[-1][1]["BRL"])
+            penultimo_val = float(rates_usd[-2][1]["BRL"]) if len(rates_usd) >= 2 else ultimo_val
+            pct = ((ultimo_val - penultimo_val) / penultimo_val * 100) if penultimo_val else 0.0
+            usd_dict = {"bid": str(ultimo_val), "pctChange": str(round(pct, 2))}
+
+        if len(rates_eur) >= 1:
+            ultimo_val = float(rates_eur[-1][1]["BRL"])
+            penultimo_val = float(rates_eur[-2][1]["BRL"]) if len(rates_eur) >= 2 else ultimo_val
+            pct = ((ultimo_val - penultimo_val) / penultimo_val * 100) if penultimo_val else 0.0
+            eur_dict = {"bid": str(ultimo_val), "pctChange": str(round(pct, 2))}
+
+        return usd_dict, eur_dict
     except Exception:
         return None, None
 
 @st.cache_data(ttl=1800)
 def buscar_historico_dolar(dias=30):
+    # 1ª tentativa: AwesomeAPI histórico
     try:
         url = f"https://economia.awesomeapi.com.br/json/daily/USD-BRL/{dias}"
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        response = requests.get(url, headers=HEADERS, timeout=8)
         response.raise_for_status()
         dados = response.json()
+        if isinstance(dados, list) and len(dados) > 0:
+            serie = {}
+            for item in reversed(dados):
+                ts = int(item["timestamp"])
+                data_curta = datetime.fromtimestamp(ts).strftime("%d/%m")
+                serie[data_curta] = float(item["bid"])
+            return serie
+    except Exception:
+        pass
 
-        # A API retorna do dia mais recente para o mais antigo; invertemos para ordem cronológica
+    # 2ª tentativa (fallback): Frankfurter série temporal
+    try:
+        fim = datetime.now().date()
+        inicio = fim - timedelta(days=dias)
+        url = f"https://api.frankfurter.app/{inicio}..{fim}?from=USD&to=BRL"
+        response = requests.get(url, headers=HEADERS, timeout=8)
+        response.raise_for_status()
+        dados = response.json().get("rates", {})
         serie = {}
-        for item in reversed(dados):
-            ts = int(item["timestamp"])
-            data_curta = datetime.fromtimestamp(ts).strftime("%d/%m")
-            serie[data_curta] = float(item["bid"])
+        for data_iso in sorted(dados.keys()):
+            dt_obj = datetime.strptime(data_iso, "%Y-%m-%d")
+            serie[dt_obj.strftime("%d/%m")] = float(dados[data_iso]["BRL"])
         return serie
     except Exception:
         return {}
@@ -68,7 +119,7 @@ def buscar_selic():
         dados = response.json()
         return float(dados[0]["valor"]), dados[0]["data"], False
     except Exception:
-        return 10.75, "Ref. estimada", True
+        return 13.75, "Ref. estimada", True
 
 def formatar_variacao(pct_float):
     sinal = "+" if pct_float > 0 else ""
@@ -120,7 +171,7 @@ def gerar_card_imagem(usd_str, usd_var_str, usd_pct_val, selic_str, imposto_str,
     draw.text((110, 740), "ARRECADAÇÃO ESTIMADA NO ANO", fill="#A0AAB5", font=fonte_label)
     draw.text((110, 810), imposto_str, fill="#FBBF24", font=fonte_imposto)
 
-    draw.text((70, 990), "Fontes: Banco Central do Brasil & AwesomeAPI", fill="#6B7280", font=fonte_rodape)
+    draw.text((70, 990), "Fontes: Banco Central do Brasil, AwesomeAPI & Frankfurter", fill="#6B7280", font=fonte_rodape)
 
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
@@ -182,7 +233,6 @@ with col3:
 
 st.divider()
 
-# Passo 2: Gráfico Histórico do Dólar (Últimos 30 dias)
 st.subheader("📈 Evolução do Dólar Comercial (Últimos 30 Dias)")
 if historico_dolar:
     st.line_chart(historico_dolar, height=280)
@@ -191,7 +241,6 @@ else:
 
 st.divider()
 
-# Seção do Contador Fiscal
 st.subheader("⏱️ Estimativa de Arrecadação Tributária Acumulada no Ano")
 placeholder_imposto = st.empty()
 
@@ -216,7 +265,7 @@ st.download_button(
 
 st.divider()
 st.markdown(
-    '<p class="source-text">Fontes: Banco Central do Brasil (SGS), AwesomeAPI (Cotações comerciais) e projeção estatística baseada na carga tributária nacional.</p>',
+    '<p class="source-text">Fontes: Banco Central do Brasil (SGS), AwesomeAPI, Frankfurter e projeção estatística baseada na carga tributária nacional.</p>',
     unsafe_allow_html=True
 )
 
