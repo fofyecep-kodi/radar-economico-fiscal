@@ -170,21 +170,39 @@ def calcular_impostometro_estimado():
     segundos_passados = max(0.0, (agora - inicio_ano).total_seconds())
     return segundos_passados * TAXA_IMPOSTO_POR_SEGUNDO
 
-# --- BUSCA DE DADOS COM DIAGNÓSTICO ---
+# --- BUSCA DE DADOS COM DIAGNÓSTICO E MÚLTIPLOS FALLBACKS ---
+
+def _buscar_par_yahoo(simbolo):
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{simbolo}?interval=1d&range=2d"
+    resp = requests.get(url, headers=HEADERS, timeout=6)
+    resp.raise_for_status()
+    dados = resp.json()
+    res = dados.get("chart", {}).get("result", [])
+    if not res:
+        return None
+    meta = res[0].get("meta", {})
+    atual = meta.get("regularMarketPrice")
+    ant = meta.get("chartPreviousClose")
+    if atual is None:
+        return None
+    atual_f = float(atual)
+    ant_f = float(ant) if ant else atual_f
+    pct = ((atual_f - ant_f) / ant_f * 100) if ant_f else 0.0
+    return {"bid": str(atual_f), "pctChange": str(round(pct, 2))}
 
 @st.cache_data(ttl=15, show_spinner=False)
 def buscar_cotacoes():
-    hora_req = datetime.now().strftime("%H:%M:%S")
     resultado = {
         "usd": None,
         "eur": None,
         "btc": None,
         "fonte_moedas": "N/D",
         "fonte_btc": "N/D",
-        "status_http": "Sem resposta",
-        "hora_resposta": hora_req
+        "status_http": "OK",
+        "hora_resposta": datetime.now().strftime("%H:%M:%S")
     }
 
+    # 1. AwesomeAPI conjunto
     try:
         url = "https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL"
         response = requests.get(url, headers=HEADERS, timeout=6)
@@ -200,10 +218,25 @@ def buscar_cotacoes():
         if "BTCBRL" in dados:
             resultado["btc"] = dados["BTCBRL"]
             resultado["fonte_btc"] = "AwesomeAPI"
-        resultado["hora_resposta"] = datetime.now().strftime("%H:%M:%S")
     except Exception as e:
-        resultado["status_http"] = f"Fallback ativo ({type(e).__name__})"
+        resultado["status_http"] = f"AwesomeAPI falhou ({type(e).__name__})"
 
+    # 2. Yahoo Finance para pares que faltarem
+    yahoo_map = {"usd": "USDBRL=X", "eur": "EURBRL=X", "btc": "BTC-BRL"}
+    for chave, sim in yahoo_map.items():
+        if not resultado[chave]:
+            try:
+                par = _buscar_par_yahoo(sim)
+                if par:
+                    resultado[chave] = par
+                    if chave in ("usd", "eur"):
+                        resultado["fonte_moedas"] = "Yahoo Finance"
+                    else:
+                        resultado["fonte_btc"] = "Yahoo Finance"
+            except Exception:
+                pass
+
+    # 3. Frankfurter para moedas que ainda faltarem
     if not resultado["usd"] or not resultado["eur"]:
         try:
             hoje = datetime.now().date()
@@ -233,10 +266,10 @@ def buscar_cotacoes():
                     pct = ((u - p) / p * 100) if p else 0.0
                     resultado["eur"] = {"bid": str(u), "pctChange": str(round(pct, 2))}
                     resultado["fonte_moedas"] = "Frankfurter"
-            resultado["hora_resposta"] = datetime.now().strftime("%H:%M:%S")
         except Exception:
             pass
 
+    # 4. CoinGecko para BTC se ainda faltar
     if not resultado["btc"]:
         try:
             url_btc = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl&include_24hr_change=true"
@@ -246,10 +279,10 @@ def buscar_cotacoes():
                 var_24h = float(r_btc["bitcoin"].get("brl_24h_change", 0.0))
                 resultado["btc"] = {"bid": str(preco_brl), "pctChange": str(round(var_24h, 2))}
                 resultado["fonte_btc"] = "CoinGecko"
-            resultado["hora_resposta"] = datetime.now().strftime("%H:%M:%S")
         except Exception:
             pass
 
+    resultado["hora_resposta"] = datetime.now().strftime("%H:%M:%S")
     return resultado
 
 @st.cache_data(ttl=30, show_spinner=False)
@@ -608,7 +641,7 @@ def renderizar_bloco_publicacao_interativo(png_bytes_io, nome_arquivo, texto_com
     """
     components.html(html, height=105)
 
-# --- GERAÇÃO DE CARDS EDITORIAIS (PILLOW) ---
+# --- GERAÇÃO DE CARDS EDITORIAIS ADAPTATIVOS (PILLOW) ---
 
 def carregar_fonte_segura(nomes_candidatos, tamanho):
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -663,6 +696,7 @@ def gerar_card_editorial(
 
     fundo_escuro = "#080C14"
     card_bg = "#111827"
+    card_destaque_bg = "#0F172A"
     borda_suave = "#1F2937"
 
     img = Image.new("RGB", (largura, altura), color=fundo_escuro)
@@ -673,73 +707,118 @@ def gerar_card_editorial(
 
     f_marca = carregar_fonte_segura(bold_c, 25)
     f_data = carregar_fonte_segura(reg_c, 20)
-    f_chapeu = carregar_fonte_segura(bold_c, 23)
-    f_destaque = carregar_fonte_segura(bold_c, 68)
-    f_manchete = carregar_fonte_segura(bold_c, 42 if eh_stories else 37)
-    f_resumo = carregar_fonte_segura(reg_c, 28 if eh_stories else 25)
+    f_chapeu = carregar_fonte_segura(bold_c, 24)
+    f_destaque = carregar_fonte_segura(bold_c, 84 if not destaque_valor else 78)
+    f_manchete = carregar_fonte_segura(bold_c, 44 if eh_stories else 39)
+    f_resumo = carregar_fonte_segura(reg_c, 29 if eh_stories else 26)
     f_rodape = carregar_fonte_segura(reg_c, 20)
 
     margem_x = 64
     topo_y = 105 if eh_stories else 44
+    rodape_y = altura - (88 if eh_stories else 54)
 
-    # Faixa superior de acento + cabeçalho editorial
+    # Cabeçalho editorial
     draw.rounded_rectangle([margem_x, topo_y, margem_x + 140, topo_y + 7], radius=4, fill=cor_destaque)
     draw.text((margem_x, topo_y + 18), "RADAR ECONÔMICO & FISCAL", fill="#F9FAFB", font=f_marca)
     draw.text((margem_x, topo_y + 49), f"{fonte_nome}  •  {data_hora}", fill="#94A3B8", font=f_data)
 
     bloco_y = topo_y + 92
-    altura_bloco_texto = 460 if eh_stories else 375
-    draw.rounded_rectangle(
-        [margem_x, bloco_y, largura - margem_x, bloco_y + altura_bloco_texto],
-        radius=24,
-        fill=card_bg,
-        outline=borda_suave,
-        width=2
-    )
-    # Barra lateral colorida dentro do bloco de texto
-    draw.rounded_rectangle(
-        [margem_x, bloco_y + 24, margem_x + 8, bloco_y + altura_bloco_texto - 24],
-        radius=4,
-        fill=cor_destaque
-    )
-
-    inner_x = margem_x + 38
-    cur_y = bloco_y + 28
-
-    draw.text((inner_x, cur_y), chapeu.upper(), fill=cor_destaque, font=f_chapeu)
-    cur_y += 38
-
-    if destaque_valor:
-        draw.text((inner_x, cur_y), destaque_valor, fill="#FFFFFF", font=f_destaque)
-        cur_y += 88
-
-    linhas_manchete = textwrap.wrap(manchete, width=36 if eh_stories else 40)
-    for linha in linhas_manchete[:4]:
-        draw.text((inner_x, cur_y), linha, fill="#F9FAFB", font=f_manchete)
-        cur_y += 48 if eh_stories else 43
-
-    if resumo:
-        cur_y += 12
-        linhas_resumo = textwrap.wrap(resumo, width=52 if eh_stories else 56)
-        for linha in linhas_resumo[:3]:
-            if cur_y > bloco_y + altura_bloco_texto - 36:
-                break
-            draw.text((inner_x, cur_y), linha, fill="#CBD5E1", font=f_resumo)
-            cur_y += 34 if eh_stories else 31
-
-    foto_y = bloco_y + altura_bloco_texto + 24
-    rodape_y = altura - (88 if eh_stories else 54)
-    foto_h = max(240, rodape_y - foto_y - 22)
     foto_w = largura - (margem_x * 2)
 
-    foto_pronta = baixar_e_ajustar_imagem(url_imagem, foto_w, foto_h)
+    # Tenta carregar imagem apenas se houver URL informada
+    foto_pronta = baixar_e_ajustar_imagem(url_imagem, foto_w, 360) if url_imagem else None
+
     if foto_pronta:
-        mascara = criar_mascara_arredondada(foto_w, foto_h, 24)
-        img.paste(foto_pronta, (margem_x, foto_y), mascara)
-        draw.rounded_rectangle([margem_x, foto_y, margem_x + foto_w, foto_y + foto_h], radius=24, outline=borda_suave, width=2)
+        # Layout com imagem da notícia embaixo (sem espaço sobrando)
+        altura_bloco_texto = 455 if eh_stories else 375
+        draw.rounded_rectangle(
+            [margem_x, bloco_y, largura - margem_x, bloco_y + altura_bloco_texto],
+            radius=24,
+            fill=card_bg,
+            outline=borda_suave,
+            width=2
+        )
+        draw.rounded_rectangle(
+            [margem_x, bloco_y + 24, margem_x + 8, bloco_y + altura_bloco_texto - 24],
+            radius=4,
+            fill=cor_destaque
+        )
+
+        inner_x = margem_x + 38
+        cur_y = bloco_y + 28
+        draw.text((inner_x, cur_y), chapeu.upper(), fill=cor_destaque, font=f_chapeu)
+        cur_y += 40
+
+        linhas_manchete = textwrap.wrap(manchete, width=36 if eh_stories else 40)
+        for linha in linhas_manchete[:4]:
+            draw.text((inner_x, cur_y), linha, fill="#F9FAFB", font=f_manchete)
+            cur_y += 48 if eh_stories else 43
+
+        if resumo:
+            cur_y += 12
+            linhas_resumo = textwrap.wrap(resumo, width=52 if eh_stories else 56)
+            for linha in linhas_resumo[:3]:
+                if cur_y > bloco_y + altura_bloco_texto - 36:
+                    break
+                draw.text((inner_x, cur_y), linha, fill="#CBD5E1", font=f_resumo)
+                cur_y += 34 if eh_stories else 31
+
+        foto_y = bloco_y + altura_bloco_texto + 24
+        foto_h = max(240, rodape_y - foto_y - 22)
+        foto_ajustada = baixar_e_ajustar_imagem(url_imagem, foto_w, foto_h)
+        if foto_ajustada:
+            mascara = criar_mascara_arredondada(foto_w, foto_h, 24)
+            img.paste(foto_ajustada, (margem_x, foto_y), mascara)
+            draw.rounded_rectangle([margem_x, foto_y, margem_x + foto_w, foto_y + foto_h], radius=24, outline=borda_suave, width=2)
     else:
-        draw.rounded_rectangle([margem_x, foto_y, margem_x + foto_w, foto_y + foto_h], radius=24, fill="#0F172A", outline=borda_suave, width=2)
-        draw.text((margem_x + 36, foto_y + (foto_h // 2) - 14), "Sem imagem da fonte — card pronto para publicar", fill="#64748B", font=f_resumo)
+        # Layout expandido limpo quando não há imagem (indicadores ou proposições)
+        card_bot = rodape_y - 24
+        draw.rounded_rectangle(
+            [margem_x, bloco_y, largura - margem_x, card_bot],
+            radius=26,
+            fill=card_bg,
+            outline=borda_suave,
+            width=2
+        )
+        draw.rounded_rectangle(
+            [margem_x, bloco_y + 28, margem_x + 10, card_bot - 28],
+            radius=5,
+            fill=cor_destaque
+        )
+
+        inner_x = margem_x + 44
+        cur_y = bloco_y + 42
+
+        draw.text((inner_x, cur_y), chapeu.upper(), fill=cor_destaque, font=f_chapeu)
+        cur_y += 52
+
+        if destaque_valor:
+            # Cartão interno de destaque numérico
+            box_val_top = cur_y
+            box_val_bot = cur_y + 155
+            draw.rounded_rectangle(
+                [inner_x, box_val_top, largura - margem_x - 44, box_val_bot],
+                radius=20,
+                fill=card_destaque_bg,
+                outline=cor_destaque,
+                width=2
+            )
+            draw.text((inner_x + 32, box_val_top + 32), destaque_valor, fill="#FFFFFF", font=f_destaque)
+            cur_y = box_val_bot + 44
+
+        linhas_manchete = textwrap.wrap(manchete, width=34 if eh_stories else 38)
+        for linha in linhas_manchete[:4]:
+            draw.text((inner_x, cur_y), linha, fill="#F9FAFB", font=f_manchete)
+            cur_y += 52 if eh_stories else 46
+
+        if resumo:
+            cur_y += 20
+            linhas_resumo = textwrap.wrap(resumo, width=48 if eh_stories else 54)
+            for linha in linhas_resumo[:6]:
+                if cur_y > card_bot - 48:
+                    break
+                draw.text((inner_x, cur_y), linha, fill="#CBD5E1", font=f_resumo)
+                cur_y += 38 if eh_stories else 34
 
     draw.text((margem_x, rodape_y), f"Fonte: {fonte_nome}  •  Radar Econômico & Fiscal", fill="#64748B", font=f_rodape)
 
@@ -1028,13 +1107,13 @@ with aba1:
 
     elif tipo_postagem == "Indicador":
         catalogo_indicadores = {
-            "Dólar (USD)": ("CÂMBIO • MERCADO", "Dólar Comercial (USD)", usd_var_str, usd_formatado, fonte_moedas, "#4ADE80"),
-            "Euro (EUR)": ("CÂMBIO • MERCADO", "Euro (EUR)", eur_var_str, eur_formatado, fonte_moedas, "#60A5FA"),
-            "Bitcoin (BTC)": ("CRIPTOATIVOS", "Bitcoin (BTC)", btc_var_str, btc_formatado, fonte_btc, "#F59E0B"),
-            "Ibovespa": ("BOLSA • B3", "Ibovespa (^BVSP)", ibov_var_str, ibov_formatado, fonte_ibov, "#38BDF8"),
+            "Dólar (USD)": ("CÂMBIO • MERCADO", "Dólar Comercial (USD)", f"Variação: {usd_var_str}", usd_formatado, fonte_moedas, "#4ADE80"),
+            "Euro (EUR)": ("CÂMBIO • MERCADO", "Euro (EUR)", f"Variação: {eur_var_str}", eur_formatado, fonte_moedas, "#60A5FA"),
+            "Bitcoin (BTC)": ("CRIPTOATIVOS", "Bitcoin (BTC)", f"Variação: {btc_var_str}", btc_formatado, fonte_btc, "#F59E0B"),
+            "Ibovespa": ("BOLSA • B3", "Ibovespa (^BVSP)", f"Variação: {ibov_var_str}", ibov_formatado, fonte_ibov, "#38BDF8"),
             "Taxa Selic": ("JUROS • COPOM", "Taxa Selic (Meta Anual)", f"Data de referência: {selic_data}", selic_formatada, "Banco Central", "#38BDF8"),
             "IPCA Mensal": ("INFLAÇÃO • IBGE/BCB", "IPCA Mensal", f"Data de referência: {ipca_data}", ipca_formatada, "Banco Central", "#F472B6"),
-            "Arrecadação Estimada": ("CONTAS PÚBLICAS", "Arrecadação Estimada no Ano", "Projeção acumulada desde 1º de janeiro.", imposto_atual_fmt, "Estimativa Fiscal", "#FBBF24"),
+            "Arrecadação Estimada": ("CONTAS PÚBLICAS", "Arrecadação Estimada no Ano", "Projeção contínua acumulada desde 1º de janeiro no país.", imposto_atual_fmt, "Estimativa Fiscal", "#FBBF24"),
         }
         ind_sel = st.selectbox("Escolha o indicador", options=list(catalogo_indicadores.keys()))
         chap_i, tit_i, res_i, dest_i, font_i, cor_i = catalogo_indicadores[ind_sel]
