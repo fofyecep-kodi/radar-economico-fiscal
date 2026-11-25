@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- ESTILO VISUAL PREMIUM ---
+# --- ESTILO VISUAL PREMIUM E RESPONSIVO ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -33,39 +33,39 @@ st.markdown("""
         visibility: hidden !important;
     }
     .block-container {
-        padding-top: 1.2rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 2rem !important;
-        max-width: 1360px;
+        max-width: 1180px;
     }
     .hero-banner {
         background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #0B1120 100%);
         border: 1px solid #334155;
-        border-radius: 18px;
-        padding: 20px 26px;
-        margin-bottom: 16px;
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
     }
     .hero-title {
-        font-size: 26px;
+        font-size: 22px;
         font-weight: 800;
         color: #F8FAFC;
         margin: 0;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.4px;
     }
     .hero-sub {
         font-size: 13px;
         color: #94A3B8;
-        margin-top: 4px;
+        margin-top: 3px;
     }
     .status-pill {
         background: rgba(56, 189, 248, 0.12);
         border: 1px solid rgba(56, 189, 248, 0.35);
         color: #7DD3FC;
-        padding: 6px 12px;
+        padding: 5px 11px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 600;
@@ -74,24 +74,21 @@ st.markdown("""
         background: #111827;
         border: 1px solid #1F2937;
         border-radius: 14px;
-        padding: 14px 16px;
-        transition: border-color 0.2s;
-    }
-    .kpi-box:hover {
-        border-color: #38BDF8;
+        padding: 13px 15px;
+        margin-bottom: 6px;
     }
     .kpi-label {
-        font-size: 12px;
-        font-weight: 600;
+        font-size: 11px;
+        font-weight: 700;
         color: #9CA3AF;
         text-transform: uppercase;
         letter-spacing: 0.4px;
     }
     .kpi-val {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
         color: #F9FAFB;
-        margin: 4px 0;
+        margin: 3px 0;
     }
     .kpi-delta-up { color: #4ADE80; font-size: 12px; font-weight: 600; }
     .kpi-delta-down { color: #F87171; font-size: 12px; font-weight: 600; }
@@ -101,22 +98,22 @@ st.markdown("""
         background: #111827;
         border: 1px solid #1F2937;
         border-radius: 14px;
-        padding: 14px 18px;
-        margin-bottom: 10px;
+        padding: 14px 16px;
+        margin-bottom: 6px;
     }
     .feed-meta {
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
     }
     .feed-title {
         font-size: 15px;
         font-weight: 700;
         color: #F3F4F6;
         line-height: 1.35;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
     .feed-desc {
         font-size: 13px;
@@ -128,17 +125,11 @@ st.markdown("""
         background-color: rgba(74, 222, 128, 0.14);
         color: #4ADE80;
         border: 1px solid rgba(74, 222, 128, 0.35);
-        padding: 2px 9px;
+        padding: 2px 8px;
         border-radius: 999px;
         font-size: 11px;
         font-weight: 700;
         margin-left: 8px;
-    }
-    .studio-panel {
-        background: #0F172A;
-        border: 1px solid #334155;
-        border-radius: 18px;
-        padding: 18px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -227,7 +218,12 @@ def limpar_html_simples(texto):
     if not texto:
         return ""
     sem_tags = re.sub(r"<[^>]+>", " ", texto)
-    sem_entidades = sem_tags.replace("&nbsp;", " ").replace("&quot;", '"').replace("&#39;", "'").replace("&amp;", "&")
+    sem_entidades = (
+        sem_tags.replace("&nbsp;", " ")
+        .replace("&quot;", '"')
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
+    )
     return re.sub(r"\s+", " ", sem_entidades).strip()
 
 def calcular_impostometro_estimado():
@@ -445,7 +441,7 @@ def buscar_historico_ativo(ativo="USD-BRL", dias=30):
 
     return {}
 
-# --- FEEDS RSS MULTI-EDITORIA (ECONOMIA, GERAIS, FOFOCAS & CURIOSIDADES) ---
+# --- FEEDS RSS MULTI-EDITORIA ---
 
 FEEDS_POR_EDITORIA = {
     "economia": [
@@ -576,10 +572,10 @@ def buscar_proposicoes_camara(limite=8):
     except Exception:
         return []
 
-# --- CONTADOR JS ---
+# --- CONTADOR JS (SEM CONFLITO DE CHAVES) ---
 
 def renderizar_contador_js(valor_inicial_float):
-    html_code = f"""
+    html_code = """
     <div style="font-family: Inter, sans-serif; padding: 6px 0;">
         <div id="contador-imposto" style="font-size: 30px; font-weight: 800; color: #FBBF24;">
             Carregando...
@@ -589,26 +585,26 @@ def renderizar_contador_js(valor_inicial_float):
         </div>
     </div>
     <script>
-        let valorAtual = {valor_inicial_float:.2f};
-        const taxaPorSegundo = {TAXA_IMPOSTO_POR_SEGUNDO:.2f};
+        let valorAtual = __VALOR_INICIAL__;
+        const taxaPorSegundo = __TAXA_SEGUNDO__;
         const el = document.getElementById("contador-imposto");
 
-        function formatarBRL(num) {{
-            return "R$ " + num.toLocaleString("pt-BR", {{
+        function formatarBRL(num) {
+            return "R$ " + num.toLocaleString("pt-BR", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-            }});
-        }}
+            });
+        }
 
-        function atualizar() {{
+        function atualizar() {
             el.textContent = formatarBRL(valorAtual);
             valorAtual += taxaPorSegundo;
-        }}
+        }
 
         atualizar();
         setInterval(atualizar, 1000);
     </script>
-    """
+    """.replace("__VALOR_INICIAL__", f"{valor_inicial_float:.2f}").replace("__TAXA_SEGUNDO__", f"{TAXA_IMPOSTO_POR_SEGUNDO:.2f}")
     components.html(html_code, height=80)
 
 # --- COMPARTILHAMENTO NATIVO DO DISPOSITIVO ---
@@ -622,96 +618,106 @@ def renderizar_bloco_publicacao_interativo(png_bytes_io, nome_arquivo, texto_com
     link_seguro = json.dumps(link_url)
     nome_seguro = json.dumps(nome_arquivo)
 
-    html = f"""
-    <div style="font-family: Inter, sans-serif; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+    html = """
+    <div style="font-family: Inter, sans-serif; display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
         <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
             <button id="btn-share" style="
                 background: linear-gradient(135deg, #2563EB, #0EA5E9);
                 color: #FFFFFF;
                 border: none;
                 border-radius: 10px;
-                padding: 11px 16px;
+                padding: 12px 18px;
                 font-size: 14px;
                 font-weight: 700;
                 cursor: pointer;
+                flex: 1;
+                min-width: 190px;
             ">📤 Compartilhar no Dispositivo</button>
 
-            <a id="btn-dl-fallback" download="{nome_arquivo}" href="data:image/png;base64,{b64_png}" style="
+            <a id="btn-dl-fallback" download="__NOME_ARQ_ATTR__" href="data:image/png;base64,__B64_PNG__" style="
                 background: #1F2937;
                 color: #E5E7EB;
                 border: 1px solid #374151;
                 border-radius: 10px;
-                padding: 10px 14px;
+                padding: 11px 16px;
                 font-size: 13px;
                 font-weight: 600;
                 text-decoration: none;
+                text-align: center;
             ">⬇️ Baixar PNG</a>
         </div>
         <div id="share-status" style="font-size: 12px; color: #9CA3AF;">
-            No celular, toque em Compartilhar para escolher WhatsApp, Instagram ou outro app.
+            Toque em Compartilhar para abrir WhatsApp, Instagram ou outro app do celular.
         </div>
     </div>
 
     <script>
-        const b64Data = "{b64_png}";
-        const fileName = {nome_seguro};
-        const shareText = {texto_seguro};
-        const shareUrl = {link_seguro};
+        const b64Data = "__B64_PNG__";
+        const fileName = __NOME_JSON__;
+        const shareText = __TEXTO_JSON__;
+        const shareUrl = __LINK_JSON__;
         const statusEl = document.getElementById("share-status");
         const btnShare = document.getElementById("btn-share");
 
-        function b64ToFile(b64, filename, mimeType) {{
+        function b64ToFile(b64, filename, mimeType) {
             const byteCharacters = atob(b64);
             const byteArrays = [];
-            for (let offset = 0; offset < byteCharacters.length; offset += 512) {{
+            for (let offset = 0; offset < byteCharacters.length; offset += 512) {
                 const slice = byteCharacters.slice(offset, offset + 512);
                 const byteNumbers = new Array(slice.length);
-                for (let i = 0; i < slice.length; i++) {{
+                for (let i = 0; i < slice.length; i++) {
                     byteNumbers[i] = slice.charCodeAt(i);
-                }}
+                }
                 byteArrays.push(new Uint8Array(byteNumbers));
-            }}
-            const blob = new Blob(byteArrays, {{ type: mimeType }});
-            return new File([blob], filename, {{ type: mimeType }});
-        }}
+            }
+            const blob = new Blob(byteArrays, { type: mimeType });
+            return new File([blob], filename, { type: mimeType });
+        }
 
-        btnShare.addEventListener("click", async () => {{
-            try {{
-                if (!navigator.share) {{
-                    statusEl.textContent = "Compartilhamento direto indisponível neste navegador. Use 'Baixar PNG'.";
+        btnShare.addEventListener("click", async () => {
+            try {
+                if (!navigator.share) {
+                    statusEl.textContent = "Compartilhamento direto indisponível aqui. Use 'Baixar PNG'.";
                     return;
-                }}
+                }
 
                 const file = b64ToFile(b64Data, fileName, "image/png");
-                const payloadComArquivo = {{
+                const payloadComArquivo = {
                     title: "Radar Studio",
                     text: shareUrl ? (shareText + "\\n" + shareUrl) : shareText,
                     files: [file]
-                }};
+                };
 
-                if (navigator.canShare && navigator.canShare({{ files: [file] }})) {{
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share(payloadComArquivo);
                     statusEl.textContent = "✅ Menu de compartilhamento aberto!";
                     return;
-                }}
+                }
 
-                await navigator.share({{
+                await navigator.share({
                     title: "Radar Studio",
                     text: shareText,
                     url: shareUrl || undefined
-                }});
-                statusEl.textContent = "✅ Texto e link compartilhados! Para imagem, toque em 'Baixar PNG'.";
-            }} catch (err) {{
-                if (err && err.name === "AbortError") {{
+                });
+                statusEl.textContent = "✅ Texto/link compartilhados! Para a imagem, toque em 'Baixar PNG'.";
+            } catch (err) {
+                if (err && err.name === "AbortError") {
                     statusEl.textContent = "Compartilhamento cancelado.";
-                }} else {{
+                } else {
                     statusEl.textContent = "Não foi possível abrir o menu nativo aqui. Use 'Baixar PNG'.";
-                }}
-            }}
-        }});
+                }
+            }
+        });
     </script>
     """
-    components.html(html, height=95)
+    html = (
+        html.replace("__B64_PNG__", b64_png)
+        .replace("__NOME_ARQ_ATTR__", nome_arquivo)
+        .replace("__NOME_JSON__", nome_seguro)
+        .replace("__TEXTO_JSON__", texto_seguro)
+        .replace("__LINK_JSON__", link_seguro)
+    )
+    components.html(html, height=96)
 
 # --- GERAÇÃO DE CARDS EDITORIAIS PREMIUM (PILLOW) ---
 
@@ -996,17 +1002,14 @@ ibov_pontos, ibov_pct, ibov_indisponivel, fonte_ibov = buscar_ibovespa()
 usd_formatado = formatar_brl(float(dolar["bid"])) if dolar else "Indisponível"
 usd_pct_num = float(dolar["pctChange"]) if dolar else 0.0
 usd_var_str = formatar_variacao(usd_pct_num) if dolar else "0,00% hoje"
-valor_usd_float = float(dolar["bid"]) if dolar else None
 
 eur_formatado = formatar_brl(float(euro["bid"])) if euro else "Indisponível"
 eur_pct_num = float(euro["pctChange"]) if euro else 0.0
 eur_var_str = formatar_variacao(eur_pct_num) if euro else "0,00% hoje"
-valor_eur_float = float(euro["bid"]) if euro else None
 
 btc_formatado = formatar_brl(float(btc["bid"])) if btc else "Indisponível"
 btc_pct_num = float(btc["pctChange"]) if btc else 0.0
 btc_var_str = formatar_variacao(btc_pct_num) if btc else ""
-valor_btc_float = float(btc["bid"]) if btc else None
 
 ibov_formatado = formatar_pontos(ibov_pontos) if (not ibov_indisponivel and ibov_pontos) else "Indisponível"
 ibov_pct_num = ibov_pct or 0.0
@@ -1032,248 +1035,43 @@ if "item_estudio" not in st.session_state:
         "cor": "#4ADE80"
     }
 
-# --- TOPO EDITORIAL ---
-st.markdown(f"""
-    <div class="hero-banner">
-        <div>
-            <div class="hero-title">📡 Radar Studio — Central de Conteúdo & Mercado</div>
-            <div class="hero-sub">Escolha qualquer notícia, indicador ou curiosidade abaixo para gerar o card pronto para postar.</div>
-        </div>
-        <div class="status-pill">
-            🕒 {data_atual_str[14:]} • {cotacoes_data["status_http"]} • 📌 {len(postados_hoje)} postados hoje
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+if "abrir_modal_estudio" not in st.session_state:
+    st.session_state["abrir_modal_estudio"] = False
 
-b_col1, b_col2, b_col3 = st.columns([1.3, 1.3, 3.4])
-with b_col1:
-    if st.button("🔄 Atualizar Tudo", use_container_width=True):
-        buscar_cotacoes.clear()
-        buscar_ibovespa.clear()
-        buscar_feed_editoria.clear()
-        buscar_proposicoes_camara.clear()
-        buscar_og_image_da_pagina.clear()
-        st.rerun()
-with b_col2:
-    if postados_hoje and st.button("🧹 Limpar Postados Hoje", use_container_width=True):
-        limpar_postagens_hoje()
-        st.rerun()
+def acionar_card_no_modal(payload_item):
+    st.session_state["item_estudio"] = payload_item
+    st.session_state["abrir_modal_estudio"] = True
+    st.rerun()
 
-# --- LAYOUT PRINCIPAL ---
-col_conteudo, col_estudio = st.columns([1.55, 1.0], gap="large")
+# --- MODAL FLUTUANTE DE PUBLICAÇÃO (RÁPIDO NO CELULAR E DESKTOP) ---
 
-def renderizar_lista_noticias(itens_news, prefixo_btn, cor_editoria, tag_editoria):
-    if not itens_news:
-        st.info("Nenhuma matéria carregada neste filtro no momento.")
-        return
-
-    for idx, item in enumerate(itens_news):
-        chave = gerar_chave_item(prefixo_btn, item["titulo"], item["fonte"])
-        badge = f'<span class="posted-badge">Já postado hoje às {postados_hoje[chave]["hora"]}</span>' if chave in postados_hoje else ""
-
-        c_txt, c_act = st.columns([4.2, 1.2])
-        with c_txt:
-            st.markdown(
-                f'<div class="feed-item">'
-                f'<div class="feed-meta" style="color:{cor_editoria};">{item["fonte"]} • {item["data_fmt"]}{badge}</div>'
-                f'<div class="feed-title">{item["titulo"]}</div>'
-                f'<div class="feed-desc">{item["resumo"]}</div>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
-        with c_act:
-            st.write("")
-            if st.button("🎨 Criar Card", key=f"btn_{prefixo_btn}_{idx}", use_container_width=True):
-                st.session_state["item_estudio"] = {
-                    "tipo": prefixo_btn,
-                    "chapeu": f"{tag_editoria} • {item['data_fmt']}",
-                    "manchete": item["titulo"],
-                    "resumo": item["resumo"] or "Confira os detalhes completos na fonte original.",
-                    "destaque": "",
-                    "fonte": item["fonte"],
-                    "link": item["link"],
-                    "img_url": item["img_url"],
-                    "cor": cor_editoria
-                }
-                st.rerun()
-
-with col_conteudo:
-    aba_econ, aba_gerais, aba_fofocas, aba_camara, aba_ferramentas = st.tabs([
-        "💹 Mercado & Economia",
-        "🌍 Notícias Gerais",
-        "✨ Fofocas & Curiosidades",
-        "🏛️ Câmara",
-        "📈 Gráficos & Resumo"
-    ])
-
-    with aba_econ:
-        k1, k2, k3 = st.columns(3)
-        with k1:
-            cls_u = "kpi-delta-down" if usd_pct_num > 0 else "kpi-delta-up"
-            st.markdown(f'<div class="kpi-box"><div class="kpi-label">💵 Dólar (USD)</div><div class="kpi-val">{usd_formatado}</div><div class="{cls_u}">{usd_var_str} • {fonte_moedas}</div></div>', unsafe_allow_html=True)
-            if st.button("🎨 Card Dólar", key="kpi_usd", use_container_width=True):
-                st.session_state["item_estudio"] = {"tipo": "indicador", "chapeu": "CÂMBIO • MERCADO", "manchete": "Dólar Comercial (USD)", "resumo": f"Variação diária: {usd_var_str}.", "destaque": usd_formatado, "fonte": fonte_moedas, "link": "", "img_url": "", "cor": "#4ADE80"}
-                st.rerun()
-        with k2:
-            cls_e = "kpi-delta-down" if eur_pct_num > 0 else "kpi-delta-up"
-            st.markdown(f'<div class="kpi-box"><div class="kpi-label">💶 Euro (EUR)</div><div class="kpi-val">{eur_formatado}</div><div class="{cls_e}">{eur_var_str} • {fonte_moedas}</div></div>', unsafe_allow_html=True)
-            if st.button("🎨 Card Euro", key="kpi_eur", use_container_width=True):
-                st.session_state["item_estudio"] = {"tipo": "indicador", "chapeu": "CÂMBIO • MERCADO", "manchete": "Euro Comercial (EUR)", "resumo": f"Variação diária: {eur_var_str}.", "destaque": eur_formatado, "fonte": fonte_moedas, "link": "", "img_url": "", "cor": "#60A5FA"}
-                st.rerun()
-        with k3:
-            cls_b = "kpi-delta-up" if btc_pct_num >= 0 else "kpi-delta-down"
-            st.markdown(f'<div class="kpi-box"><div class="kpi-label">₿ Bitcoin (BTC)</div><div class="kpi-val">{btc_formatado}</div><div class="{cls_b}">{btc_var_str} • {fonte_btc}</div></div>', unsafe_allow_html=True)
-            if st.button("🎨 Card Bitcoin", key="kpi_btc", use_container_width=True):
-                st.session_state["item_estudio"] = {"tipo": "indicador", "chapeu": "CRIPTOATIVOS", "manchete": "Bitcoin (BTC)", "resumo": f"Oscilação 24h: {btc_var_str}.", "destaque": btc_formatado, "fonte": fonte_btc, "link": "", "img_url": "", "cor": "#F59E0B"}
-                st.rerun()
-
-        st.write("")
-        k4, k5, k6 = st.columns(3)
-        with k4:
-            cls_i = "kpi-delta-up" if ibov_pct_num >= 0 else "kpi-delta-down"
-            st.markdown(f'<div class="kpi-box"><div class="kpi-label">📉 Ibovespa</div><div class="kpi-val">{ibov_formatado}</div><div class="{cls_i}">{ibov_var_str or "Ref. mercado"} • {fonte_ibov}</div></div>', unsafe_allow_html=True)
-            if st.button("🎨 Card Ibovespa", key="kpi_ibov", use_container_width=True):
-                st.session_state["item_estudio"] = {"tipo": "indicador", "chapeu": "BOLSA • B3", "manchete": "Ibovespa (^BVSP)", "resumo": f"Desempenho: {ibov_var_str or 'acompanhamento diário'}.", "destaque": ibov_formatado, "fonte": fonte_ibov, "link": "", "img_url": "", "cor": "#38BDF8"}
-                st.rerun()
-        with k5:
-            st.markdown(f'<div class="kpi-box"><div class="kpi-label">🏦 Taxa Selic</div><div class="kpi-val">{selic_formatada}</div><div class="kpi-delta-neutral">Ref: {selic_data} • BCB</div></div>', unsafe_allow_html=True)
-            if st.button("🎨 Card Selic", key="kpi_selic", use_container_width=True):
-                st.session_state["item_estudio"] = {"tipo": "indicador", "chapeu": "JUROS • COPOM", "manchete": "Taxa Selic (Meta Anual)", "resumo": f"Data de referência oficial: {selic_data}.", "destaque": selic_formatada, "fonte": "Banco Central", "link": "", "img_url": "", "cor": "#38BDF8"}
-                st.rerun()
-        with k6:
-            st.markdown(f'<div class="kpi-box"><div class="kpi-label">🏷️ IPCA Mensal</div><div class="kpi-val">{ipca_formatada}</div><div class="kpi-delta-neutral">Ref: {ipca_data} • IBGE/BCB</div></div>', unsafe_allow_html=True)
-            if st.button("🎨 Card IPCA", key="kpi_ipca", use_container_width=True):
-                st.session_state["item_estudio"] = {"tipo": "indicador", "chapeu": "INFLAÇÃO • BRASIL", "manchete": "IPCA Mensal Oficial", "resumo": f"Data de referência: {ipca_data}.", "destaque": ipca_formatada, "fonte": "Banco Central", "link": "", "img_url": "", "cor": "#F472B6"}
-                st.rerun()
-
-        st.divider()
-        portais_econ = ["Todos os portais"] + [p[0] for p in FEEDS_POR_EDITORIA["economia"]]
-        filtro_econ = st.selectbox("Portal de Economia", options=portais_econ, key="filtro_econ")
-        news_econ = buscar_feed_editoria("economia", filtro_econ)
-        renderizar_lista_noticias(news_econ, "economia", "#38BDF8", "ECONOMIA")
-
-    with aba_gerais:
-        st.caption("Principais manchetes do Brasil e do mundo (G1, Folha, UOL, Agência Brasil).")
-        portais_ger = ["Todos os portais"] + [p[0] for p in FEEDS_POR_EDITORIA["gerais"]]
-        filtro_ger = st.selectbox("Filtrar por portal", options=portais_ger, key="filtro_ger")
-        news_gerais = buscar_feed_editoria("gerais", filtro_ger)
-        renderizar_lista_noticias(news_gerais, "gerais", "#4ADE80", "BRASIL & MUNDO")
-
-    with aba_fofocas:
-        st.caption("Famosos, TV, cultura pop, ciência e curiosidades (Gshow, UOL Splash, G1 Pop & Arte, Superinteressante, TecMundo).")
-        portais_ent = ["Todos os portais"] + [p[0] for p in FEEDS_POR_EDITORIA["entretenimento"]]
-        filtro_ent = st.selectbox("Filtrar por portal", options=portais_ent, key="filtro_ent")
-        news_ent = buscar_feed_editoria("entretenimento", filtro_ent)
-        renderizar_lista_noticias(news_ent, "entretenimento", "#F472B6", "POP & CURIOSIDADES")
-
-    with aba_camara:
-        st.caption("Proposições apresentadas recentemente na Câmara dos Deputados.")
-        props = buscar_proposicoes_camara(10)
-        if props:
-            for idx, p in enumerate(props):
-                chave_p = gerar_chave_item("camara", p["codigo"], p["ementa"])
-                badge_p = f'<span class="posted-badge">Já postado hoje às {postados_hoje[chave_p]["hora"]}</span>' if chave_p in postados_hoje else ""
-                url_p = f"https://www.camara.leg.br/proposicoesWeb/fichadetailid?idProposicao={p['id']}" if p.get("id") else ""
-
-                c_pt, c_pb = st.columns([4.2, 1.2])
-                with c_pt:
-                    st.markdown(
-                        f'<div class="feed-item">'
-                        f'<div class="feed-meta" style="color:#FBBF24;">CÂMARA DOS DEPUTADOS{badge_p}</div>'
-                        f'<div class="feed-title">{p["codigo"]}</div>'
-                        f'<div class="feed-desc">{p["ementa"]}</div>'
-                        f'</div>',
-                        unsafe_allow_html=True
-                    )
-                with c_pb:
-                    st.write("")
-                    if st.button("🎨 Criar Card", key=f"btn_pl_{idx}", use_container_width=True):
-                        st.session_state["item_estudio"] = {
-                            "tipo": "camara",
-                            "chapeu": "CONGRESSO • CÂMARA",
-                            "manchete": p["codigo"],
-                            "resumo": p["ementa"],
-                            "destaque": "",
-                            "fonte": "Dados Abertos Câmara",
-                            "link": url_p,
-                            "img_url": "",
-                            "cor": "#FBBF24"
-                        }
-                        st.rerun()
-        else:
-            st.info("Consulta à Câmara temporariamente indisponível.")
-
-    with aba_ferramentas:
-        st.subheader("📈 Histórico de Mercado")
-        ca, cd = st.columns([2, 1])
-        with ca:
-            ativo_esc = st.selectbox("Ativo", ["USD-BRL", "EUR-BRL", "BTC-BRL", "IBOV"])
-        with cd:
-            dias_esc = st.selectbox("Dias", [7, 30, 90], index=1)
-        serie_h = buscar_historico_ativo(ativo_esc, dias_esc)
-        if serie_h:
-            st.line_chart(serie_h, height=240)
-
-        st.subheader("⏱️ Arrecadação Tributária Estimada")
-        renderizar_contador_js(imposto_atual_float)
-        if st.button("🎨 Gerar Card da Arrecadação", key="btn_card_imp"):
-            st.session_state["item_estudio"] = {
-                "tipo": "indicador",
-                "chapeu": "CONTAS PÚBLICAS • BRASIL",
-                "manchete": "Arrecadação Tributária Estimada",
-                "resumo": "Projeção contínua acumulada desde 1º de janeiro.",
-                "destaque": imposto_atual_fmt,
-                "fonte": "Estimativa Fiscal",
-                "link": "",
-                "img_url": "",
-                "cor": "#FBBF24"
-            }
-            st.rerun()
-
-        st.divider()
-        st.subheader("📊 Card Resumo Geral (Todos os Índices)")
-        fmt_resumo = st.radio("Formato Resumo", ["Feed (1080x1080)", "Stories (1080x1920)"], horizontal=True)
-        img_res = gerar_card_resumo(
-            usd_formatado, usd_var_str, usd_pct_num,
-            eur_formatado, eur_var_str, eur_pct_num,
-            btc_formatado, btc_var_str, btc_pct_num,
-            ibov_formatado, ibov_var_str, ibov_pct_num,
-            ipca_formatada, selic_formatada, imposto_atual_fmt,
-            data_atual_str, formato=fmt_resumo
-        )
-        st.image(img_res, width=380)
-        renderizar_bloco_publicacao_interativo(
-            img_res,
-            f"resumo_radar_{datetime.now().strftime('%H%M')}.png",
-            f"Resumo Econômico ({data_atual_str}): Dólar {usd_formatado} | Euro {eur_formatado} | Selic {selic_formatada}"
-        )
-
-# --- COLUNA FIXA DO ESTÚDIO DE PUBLICAÇÃO ---
-with col_estudio:
-    st.markdown('<div class="studio-panel">', unsafe_allow_html=True)
-    st.subheader("🎨 Estúdio de Publicação")
-
+@st.dialog("🎨 Estúdio de Publicação", width="medium")
+def mostrar_modal_publicacao():
     item_sel = st.session_state["item_estudio"]
+    postados_atual = carregar_postagens_hoje()
+
     formato_card = st.radio(
         "Formato",
         options=["Feed (1080x1080)", "Stories (1080x1920)"],
         horizontal=True,
-        key="formato_estudio_fixo"
+        key="formato_modal_radio"
     )
     sufixo_f = "stories" if "1080x1920" in formato_card else "feed"
 
     with st.expander("✏️ Ajustar texto do card (opcional)", expanded=False):
-        manchete_edit = st.text_input("Título / Manchete", value=item_sel["manchete"])
-        resumo_edit = st.text_area("Resumo / Legenda", value=item_sel["resumo"], height=80)
+        manchete_edit = st.text_input("Título / Manchete", value=item_sel["manchete"], key="edit_tit_modal")
+        resumo_edit = st.text_area("Resumo / Legenda", value=item_sel["resumo"], height=75, key="edit_res_modal")
     if "manchete_edit" not in locals():
         manchete_edit = item_sel["manchete"]
         resumo_edit = item_sel["resumo"]
 
-    img_url_final = item_sel.get("img_url") or (buscar_og_image_da_pagina(item_sel.get("link", "")) if item_sel.get("link") else "")
+    img_url_final = item_sel.get("img_url") or (
+        buscar_og_image_da_pagina(item_sel.get("link", "")) if item_sel.get("link") else ""
+    )
 
     chave_estudio = gerar_chave_item(item_sel["tipo"], item_sel["manchete"], item_sel["fonte"])
-    if chave_estudio in postados_hoje:
-        st.warning(f"⚠️ Já postado hoje às **{postados_hoje[chave_estudio]['hora']}** (você ainda pode repetir).")
+    if chave_estudio in postados_atual:
+        st.warning(f"⚠️ Já postado hoje às **{postados_atual[chave_estudio]['hora']}** (você ainda pode repetir).")
 
     card_pronto = gerar_card_editorial(
         chapeu=item_sel["chapeu"],
@@ -1297,16 +1095,230 @@ with col_estudio:
         link_url=item_sel.get("link", "")
     )
 
-    if st.button("✅ Marcar como postado hoje", key="btn_marcar_postado_fixo", use_container_width=True):
-        registrar_postagem_hoje(chave_estudio, manchete_edit[:80])
-        st.rerun()
+    c_mk, c_fechar = st.columns(2)
+    with c_mk:
+        if st.button("✅ Marcar como postado", key="btn_mk_modal", use_container_width=True):
+            registrar_postagem_hoje(chave_estudio, manchete_edit[:80])
+            st.session_state["abrir_modal_estudio"] = False
+            st.rerun()
+    with c_fechar:
+        if st.button("✖️ Fechar", key="btn_close_modal", use_container_width=True):
+            st.session_state["abrir_modal_estudio"] = False
+            st.rerun()
 
     if item_sel.get("link"):
         st.markdown(f"🔗 **Link da fonte:** [{item_sel['link']}]({item_sel['link']})")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+# --- TOPO EDITORIAL ---
+st.markdown(f"""
+    <div class="hero-banner">
+        <div>
+            <div class="hero-title">📡 Radar Studio — Central de Conteúdo & Mercado</div>
+            <div class="hero-sub">Toque em "Criar Card" em qualquer item para abrir o card na hora por cima da tela.</div>
+        </div>
+        <div class="status-pill">
+            🕒 {data_atual_str[14:]} • {cotacoes_data["status_http"]} • 📌 {len(postados_hoje)} postados hoje
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+b_col1, b_col2, b_col3 = st.columns([1.2, 1.4, 1.4])
+with b_col1:
+    if st.button("🔄 Atualizar Tudo", use_container_width=True):
+        buscar_cotacoes.clear()
+        buscar_ibovespa.clear()
+        buscar_feed_editoria.clear()
+        buscar_proposicoes_camara.clear()
+        buscar_og_image_da_pagina.clear()
+        st.rerun()
+with b_col2:
+    if st.button("🎨 Reabrir Último Card", use_container_width=True):
+        st.session_state["abrir_modal_estudio"] = True
+        st.rerun()
+with b_col3:
+    if postados_hoje and st.button("🧹 Limpar Postados Hoje", use_container_width=True):
+        limpar_postagens_hoje()
+        st.rerun()
+
+# --- LISTAGEM DE CONTEÚDO EM LARGURA TOTAL ---
+
+def renderizar_lista_noticias(itens_news, prefixo_btn, cor_editoria, tag_editoria):
+    if not itens_news:
+        st.info("Nenhuma matéria carregada neste filtro no momento.")
+        return
+
+    for idx, item in enumerate(itens_news):
+        chave = gerar_chave_item(prefixo_btn, item["titulo"], item["fonte"])
+        badge = f'<span class="posted-badge">Já postado hoje às {postados_hoje[chave]["hora"]}</span>' if chave in postados_hoje else ""
+
+        c_txt, c_act = st.columns([4.4, 1.1])
+        with c_txt:
+            st.markdown(
+                f'<div class="feed-item">'
+                f'<div class="feed-meta" style="color:{cor_editoria};">{item["fonte"]} • {item["data_fmt"]}{badge}</div>'
+                f'<div class="feed-title">{item["titulo"]}</div>'
+                f'<div class="feed-desc">{item["resumo"]}</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        with c_act:
+            if st.button("🎨 Criar Card", key=f"btn_{prefixo_btn}_{idx}", use_container_width=True):
+                acionar_card_no_modal({
+                    "tipo": prefixo_btn,
+                    "chapeu": f"{tag_editoria} • {item['data_fmt']}",
+                    "manchete": item["titulo"],
+                    "resumo": item["resumo"] or "Confira os detalhes completos na fonte original.",
+                    "destaque": "",
+                    "fonte": item["fonte"],
+                    "link": item["link"],
+                    "img_url": item["img_url"],
+                    "cor": cor_editoria
+                })
+
+aba_econ, aba_gerais, aba_fofocas, aba_camara, aba_ferramentas = st.tabs([
+    "💹 Mercado & Economia",
+    "🌍 Notícias Gerais",
+    "✨ Fofocas & Curiosidades",
+    "🏛️ Câmara",
+    "📈 Gráficos & Resumo"
+])
+
+with aba_econ:
+    k1, k2, k3 = st.columns(3)
+    with k1:
+        cls_u = "kpi-delta-down" if usd_pct_num > 0 else "kpi-delta-up"
+        st.markdown(f'<div class="kpi-box"><div class="kpi-label">💵 Dólar (USD)</div><div class="kpi-val">{usd_formatado}</div><div class="{cls_u}">{usd_var_str} • {fonte_moedas}</div></div>', unsafe_allow_html=True)
+        if st.button("🎨 Card Dólar", key="kpi_usd", use_container_width=True):
+            acionar_card_no_modal({"tipo": "indicador", "chapeu": "CÂMBIO • MERCADO", "manchete": "Dólar Comercial (USD)", "resumo": f"Variação diária: {usd_var_str}.", "destaque": usd_formatado, "fonte": fonte_moedas, "link": "", "img_url": "", "cor": "#4ADE80"})
+    with k2:
+        cls_e = "kpi-delta-down" if eur_pct_num > 0 else "kpi-delta-up"
+        st.markdown(f'<div class="kpi-box"><div class="kpi-label">💶 Euro (EUR)</div><div class="kpi-val">{eur_formatado}</div><div class="{cls_e}">{eur_var_str} • {fonte_moedas}</div></div>', unsafe_allow_html=True)
+        if st.button("🎨 Card Euro", key="kpi_eur", use_container_width=True):
+            acionar_card_no_modal({"tipo": "indicador", "chapeu": "CÂMBIO • MERCADO", "manchete": "Euro Comercial (EUR)", "resumo": f"Variação diária: {eur_var_str}.", "destaque": eur_formatado, "fonte": fonte_moedas, "link": "", "img_url": "", "cor": "#60A5FA"})
+    with k3:
+        cls_b = "kpi-delta-up" if btc_pct_num >= 0 else "kpi-delta-down"
+        st.markdown(f'<div class="kpi-box"><div class="kpi-label">₿ Bitcoin (BTC)</div><div class="kpi-val">{btc_formatado}</div><div class="{cls_b}">{btc_var_str} • {fonte_btc}</div></div>', unsafe_allow_html=True)
+        if st.button("🎨 Card Bitcoin", key="kpi_btc", use_container_width=True):
+            acionar_card_no_modal({"tipo": "indicador", "chapeu": "CRIPTOATIVOS", "manchete": "Bitcoin (BTC)", "resumo": f"Oscilação 24h: {btc_var_str}.", "destaque": btc_formatado, "fonte": fonte_btc, "link": "", "img_url": "", "cor": "#F59E0B"})
+
+    k4, k5, k6 = st.columns(3)
+    with k4:
+        cls_i = "kpi-delta-up" if ibov_pct_num >= 0 else "kpi-delta-down"
+        st.markdown(f'<div class="kpi-box"><div class="kpi-label">📉 Ibovespa</div><div class="kpi-val">{ibov_formatado}</div><div class="{cls_i}">{ibov_var_str or "Ref. mercado"} • {fonte_ibov}</div></div>', unsafe_allow_html=True)
+        if st.button("🎨 Card Ibovespa", key="kpi_ibov", use_container_width=True):
+            acionar_card_no_modal({"tipo": "indicador", "chapeu": "BOLSA • B3", "manchete": "Ibovespa (^BVSP)", "resumo": f"Desempenho: {ibov_var_str or 'acompanhamento diário'}.", "destaque": ibov_formatado, "fonte": fonte_ibov, "link": "", "img_url": "", "cor": "#38BDF8"})
+    with k5:
+        st.markdown(f'<div class="kpi-box"><div class="kpi-label">🏦 Taxa Selic</div><div class="kpi-val">{selic_formatada}</div><div class="kpi-delta-neutral">Ref: {selic_data} • BCB</div></div>', unsafe_allow_html=True)
+        if st.button("🎨 Card Selic", key="kpi_selic", use_container_width=True):
+            acionar_card_no_modal({"tipo": "indicador", "chapeu": "JUROS • COPOM", "manchete": "Taxa Selic (Meta Anual)", "resumo": f"Data de referência oficial: {selic_data}.", "destaque": selic_formatada, "fonte": "Banco Central", "link": "", "img_url": "", "cor": "#38BDF8"})
+    with k6:
+        st.markdown(f'<div class="kpi-box"><div class="kpi-label">🏷️ IPCA Mensal</div><div class="kpi-val">{ipca_formatada}</div><div class="kpi-delta-neutral">Ref: {ipca_data} • IBGE/BCB</div></div>', unsafe_allow_html=True)
+        if st.button("🎨 Card IPCA", key="kpi_ipca", use_container_width=True):
+            acionar_card_no_modal({"tipo": "indicador", "chapeu": "INFLAÇÃO • BRASIL", "manchete": "IPCA Mensal Oficial", "resumo": f"Data de referência: {ipca_data}.", "destaque": ipca_formatada, "fonte": "Banco Central", "link": "", "img_url": "", "cor": "#F472B6"})
+
+    st.divider()
+    portais_econ = ["Todos os portais"] + [p[0] for p in FEEDS_POR_EDITORIA["economia"]]
+    filtro_econ = st.selectbox("Portal de Economia", options=portais_econ, key="filtro_econ")
+    news_econ = buscar_feed_editoria("economia", filtro_econ)
+    renderizar_lista_noticias(news_econ, "economia", "#38BDF8", "ECONOMIA")
+
+with aba_gerais:
+    st.caption("Principais manchetes do Brasil e do mundo (G1, Folha, UOL, Agência Brasil).")
+    portais_ger = ["Todos os portais"] + [p[0] for p in FEEDS_POR_EDITORIA["gerais"]]
+    filtro_ger = st.selectbox("Filtrar por portal", options=portais_ger, key="filtro_ger")
+    news_gerais = buscar_feed_editoria("gerais", filtro_ger)
+    renderizar_lista_noticias(news_gerais, "gerais", "#4ADE80", "BRASIL & MUNDO")
+
+with aba_fofocas:
+    st.caption("Famosos, TV, cultura pop, ciência e curiosidades (Gshow, UOL Splash, G1 Pop & Arte, Superinteressante, TecMundo).")
+    portais_ent = ["Todos os portais"] + [p[0] for p in FEEDS_POR_EDITORIA["entretenimento"]]
+    filtro_ent = st.selectbox("Filtrar por portal", options=portais_ent, key="filtro_ent")
+    news_ent = buscar_feed_editoria("entretenimento", filtro_ent)
+    renderizar_lista_noticias(news_ent, "entretenimento", "#F472B6", "POP & CURIOSIDADES")
+
+with aba_camara:
+    st.caption("Proposições apresentadas recentemente na Câmara dos Deputados.")
+    props = buscar_proposicoes_camara(10)
+    if props:
+        for idx, p in enumerate(props):
+            chave_p = gerar_chave_item("camara", p["codigo"], p["ementa"])
+            badge_p = f'<span class="posted-badge">Já postado hoje às {postados_hoje[chave_p]["hora"]}</span>' if chave_p in postados_hoje else ""
+            url_p = f"https://www.camara.leg.br/proposicoesWeb/fichadetailid?idProposicao={p['id']}" if p.get("id") else ""
+
+            c_pt, c_pb = st.columns([4.4, 1.1])
+            with c_pt:
+                st.markdown(
+                    f'<div class="feed-item">'
+                    f'<div class="feed-meta" style="color:#FBBF24;">CÂMARA DOS DEPUTADOS{badge_p}</div>'
+                    f'<div class="feed-title">{p["codigo"]}</div>'
+                    f'<div class="feed-desc">{p["ementa"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            with c_pb:
+                if st.button("🎨 Criar Card", key=f"btn_pl_{idx}", use_container_width=True):
+                    acionar_card_no_modal({
+                        "tipo": "camara",
+                        "chapeu": "CONGRESSO • CÂMARA",
+                        "manchete": p["codigo"],
+                        "resumo": p["ementa"],
+                        "destaque": "",
+                        "fonte": "Dados Abertos Câmara",
+                        "link": url_p,
+                        "img_url": "",
+                        "cor": "#FBBF24"
+                    })
+    else:
+        st.info("Consulta à Câmara temporariamente indisponível.")
+
+with aba_ferramentas:
+    st.subheader("📈 Histórico de Mercado")
+    ca, cd = st.columns([2, 1])
+    with ca:
+        ativo_esc = st.selectbox("Ativo", ["USD-BRL", "EUR-BRL", "BTC-BRL", "IBOV"])
+    with cd:
+        dias_esc = st.selectbox("Dias", [7, 30, 90], index=1)
+    serie_h = buscar_historico_ativo(ativo_esc, dias_esc)
+    if serie_h:
+        st.line_chart(serie_h, height=240)
+
+    st.subheader("⏱️ Arrecadação Tributária Estimada")
+    renderizar_contador_js(imposto_atual_float)
+    if st.button("🎨 Gerar Card da Arrecadação", key="btn_card_imp"):
+        acionar_card_no_modal({
+            "tipo": "indicador",
+            "chapeu": "CONTAS PÚBLICAS • BRASIL",
+            "manchete": "Arrecadação Tributária Estimada",
+            "resumo": "Projeção contínua acumulada desde 1º de janeiro.",
+            "destaque": imposto_atual_fmt,
+            "fonte": "Estimativa Fiscal",
+            "link": "",
+            "img_url": "",
+            "cor": "#FBBF24"
+        })
+
+    st.divider()
+    st.subheader("📊 Card Resumo Geral (Todos os Índices)")
+    fmt_resumo = st.radio("Formato Resumo", ["Feed (1080x1080)", "Stories (1080x1920)"], horizontal=True)
+    img_res = gerar_card_resumo(
+        usd_formatado, usd_var_str, usd_pct_num,
+        eur_formatado, eur_var_str, eur_pct_num,
+        btc_formatado, btc_var_str, btc_pct_num,
+        ibov_formatado, ibov_var_str, ibov_pct_num,
+        ipca_formatada, selic_formatada, imposto_atual_fmt,
+        data_atual_str, formato=fmt_resumo
+    )
+    st.image(img_res, width=380)
+    renderizar_bloco_publicacao_interativo(
+        img_res,
+        f"resumo_radar_{datetime.now().strftime('%H%M')}.png",
+        f"Resumo Econômico ({data_atual_str}): Dólar {usd_formatado} | Euro {eur_formatado} | Selic {selic_formatada}"
+    )
 
 if postados_hoje:
     with st.expander(f"📋 Histórico de postagens de hoje ({len(postados_hoje)})", expanded=False):
         for info in postados_hoje.values():
             st.markdown(f"- `{info['hora']}` — {info['rotulo']}")
+
+if st.session_state.get("abrir_modal_estudio"):
+    mostrar_modal_publicacao()
